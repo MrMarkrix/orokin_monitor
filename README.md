@@ -20,9 +20,7 @@ No HWiNFO, no MSI Afterburner, no Rainmeter required.
 
 Orokin Monitor is a small, always-running hardware readout designed to live on a
 secondary screen — a cheap 800×480 USB/HDMI panel, a spare monitor, or a corner
-of your desktop. It reads your sensors directly through
-[LibreHardwareMonitorLib](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor)
-(which ships its own signed kernel driver, the same way HWiNFO does), so it needs
+of your desktop. Reads sensors via the PawnIO driver (installed separately — see Requirements, so it needs
 no other monitoring software running in the background.
 
 It is styled after the **Orokin** aesthetic from *Warframe* — gold on dark — and
