@@ -48,9 +48,9 @@ ships with two extra themes for legibility on different panels.
 
 ## Screenshot
 
-> `docs/screenshot1.png`
-> `docs/screenshot2.png`
-> `docs/screenshot3.png`
+| Orokin | Royal | Pastel |
+|:---:|:---:|:---:|
+| ![Orokin theme](docs/screenshot1.png) | ![Royal theme](docs/screenshot2.png) | ![Pastel theme](docs/screenshot3.png) |
 
 The included tray / app icon (`orokin.ico`) is a golden Orokin motif on dark brown.
 
