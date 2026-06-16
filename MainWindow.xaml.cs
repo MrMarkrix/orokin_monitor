@@ -77,15 +77,11 @@ namespace OrokinMonitor
                 Visible = true,
             };
 
-            // Load the bundled icon; fall back to a generic one if missing.
-            try
-            {
-                string ico = System.IO.Path.Combine(AppContext.BaseDirectory, "orokin.ico");
-                _tray.Icon = System.IO.File.Exists(ico)
-                    ? new Drawing.Icon(ico)
-                    : Drawing.SystemIcons.Application;
-            }
-            catch { _tray.Icon = Drawing.SystemIcons.Application; }
+            // Tray icon. Prefer the exe's own embedded application icon (survives
+            // single-file publish, no loose-file dependency). Fall back to the
+            // loose orokin.ico, then to a system icon. Request the small (tray)
+            // size explicitly so it isn't a clipped 32px frame.
+            _tray.Icon = LoadTrayIcon();
 
             var menu = new Forms.ContextMenuStrip();
             menu.Items.Add("Show", null, (_, _) => RestoreFromTray());
@@ -95,6 +91,34 @@ namespace OrokinMonitor
             _tray.ContextMenuStrip = menu;
 
             _tray.DoubleClick += (_, _) => RestoreFromTray();
+        }
+
+        private static Drawing.Icon LoadTrayIcon()
+        {
+            int w = Forms.SystemInformation.SmallIconSize.Width;   // usually 16, scales with DPI
+            int h = Forms.SystemInformation.SmallIconSize.Height;
+
+            // 1) embedded application icon inside the running exe
+            try
+            {
+                string exe = System.Diagnostics.Process.GetCurrentProcess().MainModule!.FileName;
+                var extracted = Drawing.Icon.ExtractAssociatedIcon(exe);
+                if (extracted != null)
+                    return new Drawing.Icon(extracted, w, h);  // request tray size
+            }
+            catch { }
+
+            // 2) loose orokin.ico next to the exe
+            try
+            {
+                string ico = System.IO.Path.Combine(AppContext.BaseDirectory, "orokin.ico");
+                if (System.IO.File.Exists(ico))
+                    return new Drawing.Icon(ico, w, h);
+            }
+            catch { }
+
+            // 3) last resort
+            return Drawing.SystemIcons.Application;
         }
 
         private bool _trayHintShown = false;
@@ -232,7 +256,8 @@ namespace OrokinMonitor
             Background = _theme.Window;
             TitleText.Foreground = _theme.Accent;
 
-            foreach (var head in new[] { CpuHead, GpuHead })
+            foreach (var head in new[] { CpuHead, GpuHead,
+                                          RamHead, PowerHead, WeatherHead, TimeHead, VolumeHead })
                 head.Foreground = _theme.Accent;
 
             // panels
@@ -257,7 +282,8 @@ namespace OrokinMonitor
                 t.Foreground = _theme.Text;
 
             // dim labels
-            foreach (var t in new[] { CpuName, GpuName, RamTemp, WeatherDesc })
+            foreach (var t in new[] { CpuName, GpuName, RamTemp, WeatherDesc, PowerSub,
+                                       CpuTempLbl, CpuClockLbl, GpuTempLbl, GpuClockLbl })
                 t.Foreground = _theme.TextDim;
         }
 
@@ -284,6 +310,21 @@ namespace OrokinMonitor
         {
             try { _weather = await _weatherSvc.GetAsync(_cfg.Latitude, _cfg.Longitude); }
             catch { /* keep last */ }
+        }
+
+        // Open a small city-search dialog; on pick, save and refresh weather.
+        private async void WeatherHead_Click(object sender, MouseButtonEventArgs e)
+        {
+            var picked = await CitySearchDialog.ShowDialogAsync(this, _weatherSvc, _theme);
+            if (picked == null) return;
+
+            _cfg.Latitude = picked.Latitude;
+            _cfg.Longitude = picked.Longitude;
+            _cfg.LocationName = picked.Name;
+            _cfg.Save();
+
+            await RefreshWeatherAsync();
+            Tick(); // repaint immediately with the new city
         }
     }
 }

@@ -16,6 +16,57 @@ namespace OrokinMonitor
     {
         private static readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(10) };
 
+        // A geocoding match for the city picker.
+        public sealed class GeoResult
+        {
+            public string Name = "";
+            public string Country = "";
+            public string Admin1 = "";   // state/region, helps disambiguate
+            public double Latitude;
+            public double Longitude;
+            public string Display => string.IsNullOrEmpty(Admin1)
+                ? $"{Name}, {Country}"
+                : $"{Name}, {Admin1}, {Country}";
+        }
+
+        // City name -> candidate coordinates, via Open-Meteo geocoding (free, no key).
+        public async Task<System.Collections.Generic.List<GeoResult>> SearchCityAsync(string query)
+        {
+            var list = new System.Collections.Generic.List<GeoResult>();
+            if (string.IsNullOrWhiteSpace(query)) return list;
+            try
+            {
+                string url =
+                    $"https://geocoding-api.open-meteo.com/v1/search?name={Uri.EscapeDataString(query)}" +
+                    "&count=8&language=en&format=json";
+                using var resp = await _http.GetAsync(url);
+                resp.EnsureSuccessStatusCode();
+                var json = await resp.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("results", out var results))
+                {
+                    foreach (var r in results.EnumerateArray())
+                    {
+                        var g = new GeoResult
+                        {
+                            Name = Str(r, "name"),
+                            Country = Str(r, "country"),
+                            Admin1 = Str(r, "admin1"),
+                            Latitude = r.GetProperty("latitude").GetDouble(),
+                            Longitude = r.GetProperty("longitude").GetDouble(),
+                        };
+                        list.Add(g);
+                    }
+                }
+            }
+            catch { /* return what we have */ }
+            return list;
+        }
+
+        private static string Str(JsonElement e, string prop) =>
+            e.TryGetProperty(prop, out var v) && v.ValueKind == JsonValueKind.String
+                ? v.GetString() ?? "" : "";
+
         public async Task<Weather> GetAsync(double lat, double lon)
         {
             var w = new Weather();
