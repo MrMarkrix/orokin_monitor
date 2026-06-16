@@ -1,0 +1,12 @@
+# Build output
+bin/
+obj/
+publish/
+
+# User runtime config (machine-specific)
+orokin-config.json
+sensors.txt
+
+# IDE
+.vs/
+*.user
