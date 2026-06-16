@@ -35,6 +35,7 @@ namespace OrokinMonitor
                 SetupTray();
                 StartTimers();
                 _ = RefreshWeatherAsync();
+                CheckPawnIo();
             };
 
             // Drag-to-move on the title bar.
@@ -305,6 +306,35 @@ namespace OrokinMonitor
         private void VolDown_Click(object sender, RoutedEventArgs e) => _volume.Step(-5);
         private void VolUp_Click(object sender, RoutedEventArgs e) => _volume.Step(+5);
         private void VolMute_Click(object sender, RoutedEventArgs e) => _volume.ToggleMute();
+
+        private void CheckPawnIo()
+        {
+            if (SensorService.IsPawnIoInstalled()) return;
+
+            var result = MessageBox.Show(
+                "CPU temperature, clock speed and some motherboard sensors need the " +
+                "PawnIO driver, which doesn't appear to be installed.\n\n" +
+                "PawnIO is a small, signed driver (the modern replacement for the " +
+                "old WinRing0 that antivirus now blocks). Without it, those readings " +
+                "will be blank.\n\n" +
+                "Open the PawnIO download page now?",
+                "Orokin Monitor — driver needed",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Information);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = "https://pawnio.eu/",
+                        UseShellExecute = true,
+                    });
+                }
+                catch { }
+            }
+        }
 
         private async System.Threading.Tasks.Task RefreshWeatherAsync()
         {

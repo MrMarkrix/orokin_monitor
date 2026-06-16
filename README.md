@@ -71,6 +71,10 @@ The included tray / app icon (`orokin.ico`) is a golden Orokin motif on dark bro
 ## Requirements
 
 - **Windows 10 or 11, 64-bit.**
+- **[PawnIO](https://pawnio.eu/)** — a small, signed driver that lets the app read
+  CPU temperature, clock, and motherboard sensors. Install it once (see below).
+  It's the modern, non-blocklisted replacement for the old WinRing0 driver that
+  antivirus software now flags.
 - Administrator rights at runtime (for sensor access — this is a Windows
   limitation; user-space apps can't read hardware temps/power without it).
 - **.NET 8 SDK** — only if you build from source (Option B below).
@@ -105,6 +109,12 @@ The app is built to `publish\OrokinMonitor.exe`.
 > Releases), use `--self-contained true` instead. Larger output, no dependency.
 
 ## Run
+
+> **First time only — install PawnIO.** CPU temperature, clock speed, and some
+> motherboard sensors are read through the [PawnIO](https://pawnio.eu/) driver.
+> Download it from <https://pawnio.eu/>, run the installer, and you're done — one
+> time, for all future runs. If you skip it, the app still runs but those values
+> show blank, and it will offer to open the download page for you on startup.
 
 Launch `OrokinMonitor.exe` (double-click, or from a terminal). It will
 prompt for administrator rights — accept it, or sensors won't read.
@@ -155,6 +165,13 @@ code-signed (signing certificates cost money), so Windows SmartScreen flags it.
 It's safe to run: click **More info**, then **Run anyway**. If you'd rather not
 trust a prebuilt binary, build it yourself from source (Option B) — the result
 is identical.
+
+**CPU temperature / clock are blank (or most sensors are).** The
+[PawnIO](https://pawnio.eu/) driver isn't installed. Install it from
+<https://pawnio.eu/> and restart the app. PawnIO is the signed, modern driver
+that replaced WinRing0 — which recent Windows Defender updates quarantine as
+`VulnerableDriver:WinNT/Winring0` (a real CVE, not a false alarm). This app uses
+PawnIO specifically to avoid that.
 
 **A value shows "—".** That sensor wasn't found or isn't readable. Dump everything
 your hardware exposes:

@@ -75,6 +75,30 @@ namespace OrokinMonitor
             _computer.Open();
         }
 
+        // Since LibreHardwareMonitorLib 0.9.5+, low-level sensors (CPU temp,
+        // clock, motherboard) come from the separately-installed PawnIO driver
+        // instead of a bundled WinRing0. If PawnIO isn't installed, those read
+        // blank. Detect its presence so the UI can prompt the user once.
+        // PawnIO installs a kernel service named "PawnIO".
+        public static bool IsPawnIoInstalled()
+        {
+            try
+            {
+                using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(
+                    @"SYSTEM\CurrentControlSet\Services\PawnIO");
+                if (key != null) return true;
+            }
+            catch { }
+            // Fallback: check the usual install location.
+            try
+            {
+                string pf = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+                return System.IO.File.Exists(System.IO.Path.Combine(pf, "PawnIO", "PawnIO.sys"))
+                    || System.IO.Directory.Exists(System.IO.Path.Combine(pf, "PawnIO"));
+            }
+            catch { return false; }
+        }
+
         public Snapshot Read()
         {
             _computer.Accept(_visitor);
